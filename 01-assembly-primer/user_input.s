@@ -1,3 +1,4 @@
+; nasm -f elf64 user_input.s && ld -o user_input user_input.o
 section .rodata
   welcome: db "Welcome what is your name: ", 0
   welcome_len: equ $ - welcome
