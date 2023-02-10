@@ -28,7 +28,7 @@ static elf64_image* elf64_parse(void* buffer, size_t size) {
     puts("Error: not an ELF binary");
     return 0;
   }
-  // allocate elf64_image object
+  // dynamically allocate elf64_image object
   elf64_image* binary = calloc(1, sizeof(elf64_image));
 
   // update buffer and size information for elf image structure
@@ -81,6 +81,9 @@ static void elf64_destroy(elf64_image* elf) {
 
 static void elf64_dump(elf64_image* elf) {
   if (elf) {
+    Elf64_Sym* symtab;
+    int symtab_len;
+    char* symtab_str;
     // dump ELF header
     printf("ELF Header:\n\tMagic: ");
     for (int i = 0; i < EI_NIDENT; ++i)
@@ -101,9 +104,19 @@ static void elf64_dump(elf64_image* elf) {
     printf("\tString Table Index: %#lx\n", elf->ehdr->e_shstrndx);
 
     puts("\nSection Headers:");
-    for (int i = 1; i < elf->ehdr->e_shnum; ++i)
+    for (int i = 1; i < elf->ehdr->e_shnum; ++i) {
+      // save the symbol table section for later use
+      if (elf->shdr[i].sh_type == SHT_SYMTAB) {
+        // find the actual symbol table
+        symtab = (Elf64_Sym *)(elf->buffer + elf->shdr[i].sh_offset);
+        // find the size of the symbol table and divide by size of each entry
+        symtab_len = elf->shdr[i].sh_size / elf->shdr[i].sh_entsize;
+        // find the offset for the symbol names in the string table
+        symtab_str = (char *)(elf->buffer + elf->shdr[elf->shdr[i].sh_link].sh_offset);
+      }
       printf("\t%s \tOffset: %#lx\n",
         elf->strtab + elf->shdr[i].sh_name, elf->shdr[i].sh_offset);
+    }
 
     puts("\nProgram Headers:");
     for (int i = 0; i < elf->ehdr->e_phnum; ++i)
@@ -111,6 +124,10 @@ static void elf64_dump(elf64_image* elf) {
         elf->phdr[i].p_type,
         elf->phdr[i].p_offset,
         elf->phdr[i].p_vaddr);
+
+    puts("\nSymbols:");
+    for (int i = 0; i < symtab_len; ++i)
+      printf("\t%s\n", symtab_str + symtab[i].st_name);
   }
   return;
 }
@@ -125,3 +142,4 @@ int main(int argc, char** argv) {
     printf("Usage: %s <elf binary>\n", argv[0]);
   return 0;
 }
+
