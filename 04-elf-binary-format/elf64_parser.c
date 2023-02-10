@@ -87,7 +87,7 @@ static void elf64_dump(elf64_image* elf) {
     // dump ELF header
     printf("ELF Header:\n\tMagic: ");
     for (int i = 0; i < EI_NIDENT; ++i)
-      printf("%#lx ", elf->ehdr->e_ident[i]);
+      printf("%02lx ", elf->ehdr->e_ident[i]);
 
     printf("\n\tType: %d\n", elf->ehdr->e_type);
     printf("\tMachine: %d\n", elf->ehdr->e_machine);
